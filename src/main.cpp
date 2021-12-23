@@ -60,7 +60,7 @@ int main() {
   window.setMouseCursorVisible(false);
 
   // create camera
-  Camera3d camera(Vector3d(0, -120, -230), -30, 0, 0, Parameters::window_width, Parameters::window_height);
+  Camera3d camera(Vector3d(0, -120, -230), -10, 0, 0, Parameters::window_width, Parameters::window_height);
 
   sf::Clock loop_timer;
   sf::Clock current_time;
@@ -75,6 +75,12 @@ int main() {
   k.add_segment(Segment3d(Vector3d(-100, 0, 0, sf::Color::White), Vector3d(0, -sqrt(square(200) - square(100) - square(100 * sqrt(3) / 3)), 100 * sqrt(3) / 3, sf::Color::White)));
   k.add_segment(Segment3d(Vector3d(100, 0, 0, sf::Color::White), Vector3d(0, -sqrt(square(200) - square(100) - square(100 * sqrt(3) / 3)), 100 * sqrt(3) / 3, sf::Color::White)));
   k.add_segment(Segment3d(Vector3d(0, 0, 100 * sqrt(3), sf::Color::White), Vector3d(0, -sqrt(square(200) - square(100) - square(100 * sqrt(3) / 3)), 100 * sqrt(3) / 3, sf::Color::White)));
+
+  sf::Font font;
+  font.loadFromFile("../Resources/arial.ttf");
+
+  sf::Text text("0", font, 32);
+  text.setPosition(5.f, 0.f);
 
   while (window.isOpen())
   {
@@ -96,6 +102,7 @@ int main() {
 
       if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Space) {
         k = getNextShape(k);
+        text.setString(std::to_string(std::stoi(text.getString().toAnsiString()) + 1));
       }
     }
 
@@ -121,6 +128,7 @@ int main() {
     window.clear();
 
     k.render_solid(window, Parameters::window_width, Parameters::window_height, camera);
+    window.draw(text);
 
     window.display();
 
