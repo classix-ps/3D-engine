@@ -1,4 +1,6 @@
 #include "tools.hpp"
+#define _USE_MATH_DEFINES
+#include <math.h>
 
 // return the square number of x
 double square(const double x) {

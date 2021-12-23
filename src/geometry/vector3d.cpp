@@ -1,5 +1,7 @@
 #include "vector3d.hpp"
 
+const double precision = 0.01;
+
 // ##############################################
 // ### operators ################################
 // ##############################################
@@ -73,6 +75,23 @@ std::ostream& operator<<(std::ostream& os, const Vector3d &v) {
 	os << std::endl;
 
 	return os;
+}
+
+bool Vector3d::operator<(const Vector3d& v) const {
+	if (x < v.x) return true;
+	if (x > v.x) return false;
+
+	if (y < v.y) return true;
+	if (y > v.y) return false;
+
+	if (z < v.z) return true;
+	if (z > v.z) return false;
+
+	return false;
+}
+
+bool Vector3d::operator==(const Vector3d& v) const {
+	return abs(x - v.x) < precision && abs(y - v.y) < precision && abs(z - v.z) < precision;
 }
 
 

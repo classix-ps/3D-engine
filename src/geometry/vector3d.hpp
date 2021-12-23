@@ -30,6 +30,9 @@ public:
 	Vector3d operator*=(const double factor);
 	double operator*(const Vector3d &v) const;
 
+	bool operator<(const Vector3d& v) const;
+	bool operator==(const Vector3d& v) const;
+
 	// others
 	void set_color(const sf::Color &_color) { color = _color; }
 	double norm() const { return sqrt(x * x + y * y + z * z); }

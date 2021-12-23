@@ -5,7 +5,7 @@
 #include "vector3d.hpp"
 
 class Segment3d {
-private:
+public:
     Vector3d a, b;
 
 public:
@@ -18,6 +18,7 @@ public:
     // operators
     Segment3d& operator=(const Segment3d &s);
     Segment3d operator+=(const Vector3d &v);
+    bool operator==(const Segment3d& v) const { return (a == v.a && b == v.b) || (a == v.b && b == v.a); }
 
 
 friend class Plane3d;
