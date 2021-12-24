@@ -96,15 +96,19 @@ Solid3d getNextShape(const Solid3d& shape) {
   return nextShape;
 }
 
+sf::Vector2f getLoadingTextPosition() { return sf::Vector2f(Parameters::window_width / 2.f, Parameters::window_height - 50.f); }
+
+sf::Vector2f getPausePosition() { return sf::Vector2f(Parameters::window_width / 2.f, Parameters::window_height / 2.f); }
+
 int main() {
   // setup window
   sf::ContextSettings window_settings;
   window_settings.antialiasingLevel = 8;
-  sf::RenderWindow window(sf::VideoMode(INITIAL_WINDOW_WIDTH, INITIAL_WINDOW_HEIGHT), "3D-engine", sf::Style::Close | sf::Style::Resize, window_settings);
+  sf::RenderWindow window(sf::VideoMode(Parameters::window_width, Parameters::window_height), "3D-engine", sf::Style::Close | sf::Style::Resize, window_settings);
   window.setVerticalSyncEnabled(true);
   window.setKeyRepeatEnabled(false);
-  Mouse::setPosition(sf::Vector2i(INITIAL_WINDOW_WIDTH / 2, INITIAL_WINDOW_HEIGHT / 2), window);
   window.setMouseCursorVisible(false);
+  Mouse::setPosition(sf::Vector2i(Parameters::window_width, Parameters::window_height) / 2, window);
 
   State state = State::Running;
 
@@ -139,13 +143,17 @@ int main() {
 
   sf::Text loadingText("Loading next shape...", font, 32);
   loadingText.setFillColor(sf::Color(80, 80, 80));
-  loadingText.setPosition(800.f, 1120.f);
+  sf::FloatRect loadingTextBounds = loadingText.getLocalBounds();
+  loadingText.setOrigin(loadingTextBounds.width / 2.f, loadingTextBounds.height / 2.f);
+  loadingText.setPosition(getLoadingTextPosition());
+  //loadingText.setScale
 
   sf::Texture pauseTx;
   pauseTx.loadFromFile("../Resources/pause.png");
   sf::Sprite pause(pauseTx);
   pause.setOrigin(sf::Vector2f(pauseTx.getSize()) / 2.f);
-  pause.setPosition(sf::Vector2f(window.getSize()) / 2.f);
+  pause.setPosition(getPausePosition());
+  pause.setScale(0.5f, 0.5f);
 
   std::future<Solid3d> newK;
 
@@ -159,13 +167,17 @@ int main() {
         window.close();
       }
       if (event.type == sf::Event::Resized) {
-        window.setView(sf::View(sf::FloatRect(0, 0, event.size.width, event.size.height)));
         Parameters::update_window_size(event.size.width, event.size.height);
+
+        window.setView(sf::View(sf::FloatRect(0.f, 0.f, Parameters::window_width, Parameters::window_height)));
         std::cout << "Window resized: "
-          << event.size.width
+          << Parameters::window_width
           << " x "
-          << event.size.height << std::endl;
+          << Parameters::window_height << std::endl;
+
         camera.reload_frustrum(Parameters::window_width, Parameters::window_height);
+        loadingText.setPosition(getLoadingTextPosition());
+        pause.setPosition(getPausePosition());
       }
       if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Escape) {
         if (state == State::Running) {
@@ -175,7 +187,7 @@ int main() {
         else if (state == State::Paused) {
           state = State::Running;
           window.setMouseCursorVisible(false);
-          Mouse::setPosition(sf::Vector2i(INITIAL_WINDOW_WIDTH / 2, INITIAL_WINDOW_HEIGHT / 2), window);
+          Mouse::setPosition(sf::Vector2i(Parameters::window_width, Parameters::window_height) / 2, window);
         }
       }
 
@@ -188,7 +200,7 @@ int main() {
     if (state == State::Running) {
       // rotate camera
       camera.rotate(Mouse::get_move_x(window), Mouse::get_move_y(window));
-      Mouse::setPosition(sf::Vector2i(INITIAL_WINDOW_WIDTH / 2, INITIAL_WINDOW_HEIGHT / 2), window);
+      Mouse::setPosition(sf::Vector2i(Parameters::window_width, Parameters::window_height) / 2, window);
 
       // move camera
       if (sf::Keyboard::isKeyPressed(sf::Keyboard::W))
