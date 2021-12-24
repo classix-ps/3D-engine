@@ -157,7 +157,7 @@ int main() {
         camera.reload_frustrum(Parameters::window_width, Parameters::window_height);
       }
 
-      if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Space && !shapeReady) {
+      if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Space && !newK.valid()) {
         newK = std::async(std::launch::async, getNextShape, k);
         load_timer.restart();
       }
@@ -168,6 +168,7 @@ int main() {
       k = newK.get();
       iterText.setString(std::to_string(std::stoi(iterText.getString().toAnsiString()) + 1));
       statText.setString(getStats(k));
+      loadingText.setString("Loading next shape...");
       shapeReady = false;
     }
 
