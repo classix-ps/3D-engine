@@ -1,5 +1,7 @@
 # 3D-engine
 
+[![Tetrahedron](https://yt-embed.herokuapp.com/embed?v=cEDSwq0HJCM)](https://www.youtube.com/watch?v=cEDSwq0HJCM "C++ Dividing Tetrahedron (SFML)")
+
 ![basic_scene.gif](game_images/demo.gif)
 
 ### Work with this repository
