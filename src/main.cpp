@@ -8,6 +8,8 @@
 
 #define USAGE
 
+enum class State { Running, Paused };
+
 std::atomic_bool shapeReady = false;
 std::atomic_bool quit = false;
 
@@ -104,6 +106,8 @@ int main() {
   Mouse::setPosition(sf::Vector2i(INITIAL_WINDOW_WIDTH / 2, INITIAL_WINDOW_HEIGHT / 2), window);
   window.setMouseCursorVisible(false);
 
+  State state = State::Running;
+
   // create camera
   Camera3d camera(Vector3d(0, -120, -230), -10, 0, 0, Parameters::window_width, Parameters::window_height);
 
@@ -137,6 +141,12 @@ int main() {
   loadingText.setFillColor(sf::Color(80, 80, 80));
   loadingText.setPosition(800.f, 1120.f);
 
+  sf::Texture pauseTx;
+  pauseTx.loadFromFile("../Resources/pause.png");
+  sf::Sprite pause(pauseTx);
+  pause.setOrigin(sf::Vector2f(pauseTx.getSize()) / 2.f);
+  pause.setPosition(sf::Vector2f(window.getSize()) / 2.f);
+
   std::future<Solid3d> newK;
 
   while (window.isOpen())
@@ -145,8 +155,9 @@ int main() {
 
     // handle events
     while (window.pollEvent(event)) {
-      if (event.type == sf::Event::Closed || sf::Keyboard::isKeyPressed(sf::Keyboard::Escape))
+      if (event.type == sf::Event::Closed || (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Q)) {
         window.close();
+      }
       if (event.type == sf::Event::Resized) {
         window.setView(sf::View(sf::FloatRect(0, 0, event.size.width, event.size.height)));
         Parameters::update_window_size(event.size.width, event.size.height);
@@ -156,11 +167,42 @@ int main() {
           << event.size.height << std::endl;
         camera.reload_frustrum(Parameters::window_width, Parameters::window_height);
       }
+      if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Escape) {
+        if (state == State::Running) {
+          state = State::Paused;
+          window.setMouseCursorVisible(true);
+        }
+        else if (state == State::Paused) {
+          state = State::Running;
+          window.setMouseCursorVisible(false);
+          Mouse::setPosition(sf::Vector2i(INITIAL_WINDOW_WIDTH / 2, INITIAL_WINDOW_HEIGHT / 2), window);
+        }
+      }
 
-      if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Space && !newK.valid()) {
+      if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Space && !newK.valid() && state == State::Running) {
         newK = std::async(std::launch::async, getNextShape, k);
         load_timer.restart();
       }
+    }
+
+    if (state == State::Running) {
+      // rotate camera
+      camera.rotate(Mouse::get_move_x(window), Mouse::get_move_y(window));
+      Mouse::setPosition(sf::Vector2i(INITIAL_WINDOW_WIDTH / 2, INITIAL_WINDOW_HEIGHT / 2), window);
+
+      // move camera
+      if (sf::Keyboard::isKeyPressed(sf::Keyboard::W))
+        camera.move(Camera3d::DIRECTION::FRONT);
+      if (sf::Keyboard::isKeyPressed(sf::Keyboard::S))
+        camera.move(Camera3d::DIRECTION::BACK);
+      if (sf::Keyboard::isKeyPressed(sf::Keyboard::D))
+        camera.move(Camera3d::DIRECTION::RIGHT);
+      if (sf::Keyboard::isKeyPressed(sf::Keyboard::A))
+        camera.move(Camera3d::DIRECTION::LEFT);
+      if (sf::Keyboard::isKeyPressed(sf::Keyboard::Q))
+        camera.move(Camera3d::DIRECTION::UP);
+      if (sf::Keyboard::isKeyPressed(sf::Keyboard::E))
+        camera.move(Camera3d::DIRECTION::DOWN);
     }
 
     // update shape (if needed)
@@ -172,28 +214,11 @@ int main() {
       shapeReady = false;
     }
 
-    // rotate camera
-    camera.rotate(Mouse::get_move_x(window), Mouse::get_move_y(window));
-    Mouse::setPosition(sf::Vector2i(INITIAL_WINDOW_WIDTH / 2, INITIAL_WINDOW_HEIGHT / 2), window);
-
-    // move camera
-    if (sf::Keyboard::isKeyPressed(sf::Keyboard::W))
-      camera.move(Camera3d::DIRECTION::FRONT);
-    if (sf::Keyboard::isKeyPressed(sf::Keyboard::S))
-      camera.move(Camera3d::DIRECTION::BACK);
-    if (sf::Keyboard::isKeyPressed(sf::Keyboard::D))
-      camera.move(Camera3d::DIRECTION::RIGHT);
-    if (sf::Keyboard::isKeyPressed(sf::Keyboard::A))
-      camera.move(Camera3d::DIRECTION::LEFT);
-    if (sf::Keyboard::isKeyPressed(sf::Keyboard::Q))
-      camera.move(Camera3d::DIRECTION::UP);
-    if (sf::Keyboard::isKeyPressed(sf::Keyboard::E))
-      camera.move(Camera3d::DIRECTION::DOWN);
-
     // rendering
     window.clear();
 
     k.render_solid(window, Parameters::window_width, Parameters::window_height, camera);
+
     window.draw(iterText);
     window.draw(statHeader);
     window.draw(statText);
@@ -210,6 +235,10 @@ int main() {
         load_timer.restart();
       }
       window.draw(loadingText);
+    }
+
+    if (state == State::Paused) {
+      window.draw(pause);
     }
 
     window.display();
