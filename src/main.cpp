@@ -108,10 +108,10 @@ int main() {
   Camera3d camera(Vector3d(0, -120, -230), -10, 0, 0, Parameters::window_width, Parameters::window_height);
 
   sf::Clock loop_timer;
-  sf::Clock current_time;
+  sf::Clock load_timer;
   srand(time(NULL));
   loop_timer.restart();
-  current_time.restart();
+  load_timer.restart();
 
   Solid3d k;
   k.add_segment(Segment3d(Vector3d(-100, 0, 0, sf::Color::White), Vector3d(100, 0, 0, sf::Color::White)));
@@ -132,6 +132,10 @@ int main() {
   statHeader.setPosition(5.f, 70.f);
   sf::Text statText(getStats(k), font, 32);
   statText.setPosition(5.f, 105.f);
+
+  sf::Text loadingText("Loading next shape...", font, 32);
+  loadingText.setFillColor(sf::Color(80, 80, 80));
+  loadingText.setPosition(800.f, 1120.f);
 
   std::future<Solid3d> newK;
 
@@ -155,6 +159,7 @@ int main() {
 
       if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Space && !shapeReady) {
         newK = std::async(std::launch::async, getNextShape, k);
+        load_timer.restart();
       }
     }
 
@@ -191,6 +196,20 @@ int main() {
     window.draw(iterText);
     window.draw(statHeader);
     window.draw(statText);
+    if (newK.valid()) {
+      if (load_timer.getElapsedTime().asMilliseconds() > 500) {
+        std::string loading = loadingText.getString().toAnsiString();
+        size_t dots = loading.size() - loading.find('.');
+        if (dots == 3) {
+          loadingText.setString(loading.substr(0, loading.size() - 3));
+        }
+        else {
+          loadingText.setString(loading + '.');
+        }
+        load_timer.restart();
+      }
+      window.draw(loadingText);
+    }
 
     window.display();
 
@@ -204,7 +223,9 @@ int main() {
   }
 
   quit = true;
-  newK.wait();
+  if (newK.valid()) {
+    newK.wait();
+  }
   return EXIT_SUCCESS;
 }
 
