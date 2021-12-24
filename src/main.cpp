@@ -4,7 +4,11 @@
 #include "geometry/solid3d.hpp"
 #include "geometry/geometry.hpp"
 
+#include <future>
+
 #define USAGE
+
+std::atomic_bool shapeReady = false;
 
 std::string getStats(const Solid3d& shape) {
   std::string stats;
@@ -75,6 +79,7 @@ Solid3d getNextShape(const Solid3d& shape) {
     }
   }
 
+  shapeReady = true;
   return nextShape;
 }
 
@@ -117,6 +122,8 @@ int main() {
   sf::Text statText(getStats(k), font, 32);
   statText.setPosition(5.f, 105.f);
 
+  std::future<Solid3d> newK;
+
   while (window.isOpen())
   {
     sf::Event event;
@@ -135,11 +142,17 @@ int main() {
         camera.reload_frustrum(Parameters::window_width, Parameters::window_height);
       }
 
-      if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Space) {
-        k = getNextShape(k);
-        iterText.setString(std::to_string(std::stoi(iterText.getString().toAnsiString()) + 1));
-        statText.setString(getStats(k));
+      if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Space && !shapeReady) {
+        newK = std::async(std::launch::async, getNextShape, k);
       }
+    }
+
+    // update shape (if needed)
+    if (shapeReady) {
+      k = newK.get();
+      iterText.setString(std::to_string(std::stoi(iterText.getString().toAnsiString()) + 1));
+      statText.setString(getStats(k));
+      shapeReady = false;
     }
 
     // rotate camera
