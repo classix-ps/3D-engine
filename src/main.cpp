@@ -9,6 +9,7 @@
 #define USAGE
 
 std::atomic_bool shapeReady = false;
+std::atomic_bool quit = false;
 
 std::string getStats(const Solid3d& shape) {
   std::string stats;
@@ -43,6 +44,10 @@ std::string getStats(const Solid3d& shape) {
 Solid3d getNextShape(const Solid3d& shape) {
   std::map<Vector3d, std::vector<Vector3d>> kMap;
   for (const Segment3d& edge : shape.edges) {
+    if (quit) {
+      return shape;
+    }
+
     Vector3d midpoint = (edge.a + edge.b) * 0.5;
     midpoint.set_color(sf::Color::White);
     kMap[edge.a].push_back(midpoint);
@@ -51,8 +56,13 @@ Solid3d getNextShape(const Solid3d& shape) {
 
   Solid3d nextShape;
   for (const auto& vertex : kMap) {
+    if (quit) {
+      return shape;
+    }
+
     std::vector<Vector3d> midpoints = vertex.second;
 
+    // order points to be connected in correct order to create polygon
     for (size_t i = 0; i < midpoints.size() - 1; i++) {
       size_t nextVertex = i + 1;
       double length = (midpoints[i] - midpoints[nextVertex]).norm();
@@ -70,6 +80,7 @@ Solid3d getNextShape(const Solid3d& shape) {
       }
     }
 
+    // connect midpoints of vertex
     for (size_t i = 0; i < midpoints.size(); i++) {
       Segment3d edge = Segment3d(midpoints[i], midpoints[(i + 1) % midpoints.size()]);
 
@@ -192,6 +203,8 @@ int main() {
     loop_timer.restart();
   }
 
+  quit = true;
+  newK.wait();
   return EXIT_SUCCESS;
 }
 
