@@ -1,6 +1,6 @@
 #include "vector3d.hpp"
 
-const double precision = 0.01;
+const double precision = 0.001;
 
 // ##############################################
 // ### operators ################################

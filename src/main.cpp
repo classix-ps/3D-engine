@@ -4,9 +4,38 @@
 #include "geometry/solid3d.hpp"
 #include "geometry/geometry.hpp"
 
-#define NODEMO
+#define USAGE
 
-#ifdef NODEMO
+std::string getStats(const Solid3d& shape) {
+  std::string stats;
+
+  size_t faces, edges, vertices;
+  std::map<Vector3d, size_t> edgesPerVertex;
+  
+  edges = shape.edges.size();
+  for (const Segment3d& edge : shape.edges) {
+    edgesPerVertex[edge.a]++;
+    edgesPerVertex[edge.b]++;
+  }
+  vertices = edgesPerVertex.size();
+  faces = edges - vertices + 2;
+
+  std::map<size_t, size_t> edgesPerVertexOccurences;
+  for (const auto& vertex : edgesPerVertex) {
+    edgesPerVertexOccurences[vertex.second]++;
+  }
+
+  stats += "# of faces: " + std::to_string(faces) + "\n";
+  stats += "# of edges: " + std::to_string(edges) + "\n";
+  stats += "# of vertices: " + std::to_string(vertices) + "\n";
+  stats += "Edges per vertex:\n";
+  for (const auto& edgesCount : edgesPerVertexOccurences) {
+    stats += "\t" + std::to_string(edgesCount.first) + " edges: " + std::to_string(edgesCount.second) + " occurences\n";
+  }
+
+  return stats;
+}
+
 Solid3d getNextShape(const Solid3d& shape) {
   std::map<Vector3d, std::vector<Vector3d>> kMap;
   for (const Segment3d& edge : shape.edges) {
@@ -79,8 +108,14 @@ int main() {
   sf::Font font;
   font.loadFromFile("../Resources/arial.ttf");
 
-  sf::Text text("0", font, 32);
-  text.setPosition(5.f, 0.f);
+  sf::Text iterText("0", font, 32);
+  iterText.setPosition(5.f, 0.f);
+
+  sf::Text statHeader("Shape statistics", font, 32);
+  statHeader.setStyle(sf::Text::Underlined);
+  statHeader.setPosition(5.f, 70.f);
+  sf::Text statText(getStats(k), font, 32);
+  statText.setPosition(5.f, 105.f);
 
   while (window.isOpen())
   {
@@ -102,7 +137,8 @@ int main() {
 
       if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Space) {
         k = getNextShape(k);
-        text.setString(std::to_string(std::stoi(text.getString().toAnsiString()) + 1));
+        iterText.setString(std::to_string(std::stoi(iterText.getString().toAnsiString()) + 1));
+        statText.setString(getStats(k));
       }
     }
 
@@ -128,12 +164,16 @@ int main() {
     window.clear();
 
     k.render_solid(window, Parameters::window_width, Parameters::window_height, camera);
-    window.draw(text);
+    window.draw(iterText);
+    window.draw(statHeader);
+    window.draw(statText);
 
     window.display();
 
     // other
+#ifdef USAGE
     Parameters::print_mean_CPU_usage(std::cout, loop_timer.getElapsedTime().asMilliseconds());
+#endif
 
     sf::sleep(sf::milliseconds(MAX_MAIN_LOOP_DURATION - loop_timer.getElapsedTime().asMilliseconds()));
     loop_timer.restart();
@@ -141,7 +181,8 @@ int main() {
 
   return EXIT_SUCCESS;
 }
-#else
+
+/*
 using std::cout;
 using std::endl;
 
@@ -252,4 +293,4 @@ int main()
     
 	return 0;
 }
-#endif
+*/
